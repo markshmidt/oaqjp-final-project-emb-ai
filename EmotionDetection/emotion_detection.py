@@ -12,30 +12,58 @@ def emotion_detector(text_to_analyze):
             "text": text_to_analyze
         }
     }
-    response = requests.post(url, headers=headers, json=input_json)
-    result = json.loads(response.text)
-    
-    emotions = result.get("emotionPredictions", [])[0].get("emotion", {})
-    
-    anger_score = emotions.get("anger", 0)
-    disgust_score = emotions.get("disgust", 0)
-    fear_score = emotions.get("fear", 0)
-    joy_score = emotions.get("joy", 0)
-    sadness_score = emotions.get("sadness", 0)
-    
-    scores = {
-        "anger": anger_score,
-        "disgust": disgust_score,
-        "fear": fear_score,
-        "joy": joy_score,
-        "sadness": sadness_score
+    anger = disgust = fear = joy = sadness = dominant_emotion = None
+    none_result = {
+        "anger": None,
+        "disgust": None,
+        "fear": None,
+        "joy": None,
+        "sadness": None,
+        "dominant_emotion": None
     }
-    dominant_emotion = max(scores, key=scores.get)
+
+    if not text_to_analyze or not str(text_to_analyze).strip():
+        return none_result
+        
+    try:
+        response = requests.post(url, headers=headers, json=input_json)
+    except Exception:
+        return {
+            "anger": None,
+            "disgust": None,
+            "fear": None,
+            "joy": None,
+            "sadness": None,
+            "dominant_emotion": None
+        }
+
+    if response.status_code == 200:
+        formatted_response = json.loads(response.text)
+        emotions = formatted_response.get("emotionPredictions", [])[0].get("emotion", {})
+
+        anger = emotions.get("anger", 0)
+        disgust = emotions.get("disgust", 0)
+        fear = emotions.get("fear", 0)
+        joy = emotions.get("joy", 0)
+        sadness = emotions.get("sadness", 0)
+
+        scores = {
+            "anger": anger,
+            "disgust": disgust,
+            "fear": fear,
+            "joy": joy,
+            "sadness": sadness
+        }
+        dominant_emotion = max(scores, key=scores.get)
+
+    elif response.status_code in (400, 500):
+        return none_result
+
     return {
-        "anger": anger_score,
-        "disgust": disgust_score,
-        "fear": fear_score,
-        "joy": joy_score,
-        "sadness": sadness_score,
+        "anger": anger,
+        "disgust": disgust,
+        "fear": fear,
+        "joy": joy,
+        "sadness": sadness,
         "dominant_emotion": dominant_emotion
     }
