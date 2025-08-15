@@ -1,8 +1,26 @@
-import requests
+"""Emotion detection module using Watson NLP API.
+
+This module provides the `emotion_detector` function, which sends text to the
+Watson NLP EmotionPredict service and returns the five emotion scores along
+with the dominant emotion. Blank input and API errors are handled gracefully.
+"""
+
 import json
+import requests
 
 def emotion_detector(text_to_analyze):
-    url = "https://sn-watson-emotion.labs.skills.network/v1/watson.runtime.nlp.v1/NlpService/EmotionPredict"
+    """Detect emotions in a given text using the Watson NLP API.
+
+    Args:
+        text_to_analyze (str): The text to be analyzed.
+
+    Returns:
+        dict: Dictionary containing scores for anger, disgust, fear, joy, sadness,
+              and the dominant emotion. All values are None if input is invalid or
+              an error occurs.
+    """
+    url = """https://sn-watson-emotion.labs.skills.network/v1/
+    watson.runtime.nlp.v1/NlpService/EmotionPredict"""
     headers = {
         "grpc-metadata-mm-model-id": "emotion_aggregated-workflow_lang_en_stock",
         "Content-Type": "application/json"
@@ -12,6 +30,7 @@ def emotion_detector(text_to_analyze):
             "text": text_to_analyze
         }
     }
+
     anger = disgust = fear = joy = sadness = dominant_emotion = None
     none_result = {
         "anger": None,
@@ -24,18 +43,8 @@ def emotion_detector(text_to_analyze):
 
     if not text_to_analyze or not str(text_to_analyze).strip():
         return none_result
-        
-    try:
-        response = requests.post(url, headers=headers, json=input_json)
-    except Exception:
-        return {
-            "anger": None,
-            "disgust": None,
-            "fear": None,
-            "joy": None,
-            "sadness": None,
-            "dominant_emotion": None
-        }
+
+    response = requests.post(url, headers=headers, json=input_json, timeout=10)
 
     if response.status_code == 200:
         formatted_response = json.loads(response.text)
